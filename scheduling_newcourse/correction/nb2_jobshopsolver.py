@@ -57,14 +57,14 @@ class SolverJobShop:
         ends = [[self.model.NewIntVar(0, max_time, f"ends_{j, k}")
                  for k in range(len(self.jobshop_problem.list_jobs[j]))]
                 for j in range(self.jobshop_problem.n_jobs)]
-        # Create the interval variables
+        # Create the interval variables from starts and ends, and add the procession time of the task in the size attribute.
         intervals = [[self.model.NewIntervalVar(start=starts[j][k],
                                                 size=self.jobshop_problem.list_jobs[j][k].processing_time,
                                                 end=ends[j][k],
                                                 name=f"task_{j, k}")
                      for k in range(len(self.jobshop_problem.list_jobs[j]))]
                      for j in range(self.jobshop_problem.n_jobs)]
-        # Precedence constraint between subparts of each job.
+        # Precedence constraint between successives subparts of each job.
         for j in range(self.jobshop_problem.n_jobs):
             for k in range(1, len(self.jobshop_problem.list_jobs[j])):
                 self.model.Add(starts[j][k] >= ends[j][k-1])
@@ -74,7 +74,8 @@ class SolverJobShop:
                                      for x in self.jobshop_problem.job_per_machines[machine]])
         # Objective value variable
         makespan = self.model.NewIntVar(0, max_time, name="makespan")
-        self.model.AddMaxEquality(makespan, [ends[i][j] for i in range(len(ends))
+        # Set it to the maximum value of ending times of last subjob of jobs.
+        self.model.AddMaxEquality(makespan, [ends[i][-1] for i in range(len(ends))
                                              for j in range(len(ends[i]))])
         self.model.Minimize(makespan)
         # Store the variables in some dictionnaries.
@@ -84,7 +85,7 @@ class SolverJobShop:
     def solve(self, **kwargs) -> SolutionJobshop:
         self.init_model(**kwargs)
         solver = cp_model.CpSolver()
-        solver.parameters.max_time_in_seconds = 10
+        solver.parameters.max_time_in_seconds = kwargs.get("max_time_in_seconds")
         status = solver.Solve(self.model)
         status_human = solver.StatusName(status)
         print("Solver finished ", status_human)
