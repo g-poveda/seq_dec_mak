@@ -19,3 +19,22 @@ To go further on solving scheduling problems :
 - If you want to try another solving philosophy : https://www.hexaly.com/docs/last/exampletour/index.html 
  
 For further information please contact g-poveda via issues in this repo or if you have his personal contact. 
+
+## Details of the notebook and main take-away 
+
+### Notebook 1 : 
+Intro on RCPSP problem + heuristic optimisation :  
+- Implementation of SGS algorithm that builds a feasible schedule from a given permutation of tasks.
+- [New] : basic greedy local search on the permutation to improve the schedule.
+
+### Notebook 2 : 
+CPSat tuto and Jobshop problem.
+- CPSat mini tutorial : 
+  - create different kind of variables, 
+  - explore the expressivity of constraints (boolean, integer, enforcement, global constraints on interval..)
+- Generic CPSat encoding of Jobshop problem
+
+### Notebook 3 (no correction given, TP) :
+CP solving of RCPSP
+- CPSat encoding of RCPSP 
+- As bonus, encoding of RCPSP with additional constraints.
