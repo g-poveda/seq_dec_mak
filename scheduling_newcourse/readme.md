@@ -17,4 +17,5 @@ To go further on solving scheduling problems :
     - https://github.com/google/or-tools/tree/stable/examples/python
     - Go through the full guide : https://developers.google.com/optimization/cp/cp_solver, and notably on the scheduling focused examples (https://developers.google.com/optimization/scheduling)
 - If you want to try another solving philosophy : https://www.hexaly.com/docs/last/exampletour/index.html 
-For further information please contact g-poveda via issues in this repo. 
+ 
+For further information please contact g-poveda via issues in this repo or if you have his personal contact. 
