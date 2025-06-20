@@ -1,6 +1,6 @@
 import numpy as np
 from typing import List, Hashable
-def sgs_algorithm(rcpsp_model: RCPSPModel, 
+def sgs_algorithm(rcpsp_model: RcpspProblem, 
                   permutation_of_task: List[Hashable], predecessors=None):
     # Compute predecessors for each task. 
     if predecessors is None:

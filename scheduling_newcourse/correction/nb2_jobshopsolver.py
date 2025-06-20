@@ -85,7 +85,7 @@ class SolverJobShop:
     def solve(self, **kwargs) -> SolutionJobshop:
         self.init_model(**kwargs)
         solver = cp_model.CpSolver()
-        solver.parameters.max_time_in_seconds = kwargs.get("max_time_in_seconds")
+        solver.parameters.max_time_in_seconds = kwargs.get("max_time_in_seconds", 10)
         status = solver.Solve(self.model)
         status_human = solver.StatusName(status)
         print("Solver finished ", status_human)

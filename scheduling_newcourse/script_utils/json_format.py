@@ -1,10 +1,10 @@
 import json
 from typing import Dict
-from discrete_optimization.rcpsp.specialized_rcpsp.rcpsp_specialized_constraints import SpecialConstraintsDescription, \
-    RCPSPModelPreemptive, \
-    RCPSPModelSpecialConstraintsPreemptive
-from discrete_optimization.rcpsp.rcpsp_model import RCPSPModel
-from discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import Employee, SkillDetail, MS_RCPSPModel
+from discrete_optimization.rcpsp.problem_specialized_constraints import SpecialConstraintsDescription, \
+    PreemptiveRcpspProblem, \
+    SpecialConstraintsPreemptiveRcpspProblem
+from discrete_optimization.rcpsp.problem import RcpspProblem
+from discrete_optimization.rcpsp_multiskill.problem import Employee, SkillDetail, MultiskillRcpspProblem
 import numpy as np
 
 
@@ -96,13 +96,13 @@ def load_instance_rcpsp(json_path=None, dict_instance=None):
                                   "MultiModeRCPSPModel",
                                   "RCPSPModelCalendar",
                                   "SingleModeRCPSPModel"}:
-        model = RCPSPModel(**dict_instance)
+        model = RcpspProblem(**dict_instance)
     if dict_instance["class"] == "RCPSPModelSpecialConstraints":
-        model = RCPSPModel(**dict_instance)
+        model = RcpspProblem(**dict_instance)
     if dict_instance["class"] == "RCPSPModelPreemptive":
-        model = RCPSPModelPreemptive(**dict_instance)
+        model = MultiskillRcpspProblem(**dict_instance)
     if dict_instance["class"] == "RCPSPModelSpecialConstraintsPreemptive":
-        model = RCPSPModelSpecialConstraintsPreemptive(**dict_instance)
+        model = SpecialConstraintsPreemptiveRcpspProblem(**dict_instance)
     if "additional_data" in dict_instance:
         model.additional_data = dict_instance["additional_data"]
     return model
@@ -155,7 +155,7 @@ def load_instance_msrcpsp(json_path=None, dict_instance=None):
     if "preemptive_indicator" in dict_instance:
         dict_instance["preemptive_indicator"] = {int(x): dict_instance["preemptive_indicator"][x]
                                                  for x in dict_instance["preemptive_indicator"]}
-    model = MS_RCPSPModel(**{k: dict_instance[k] for k in dict_instance if k != "additional_data"})
+    model = MultiskillRcpspProblem(**{k: dict_instance[k] for k in dict_instance if k != "additional_data"})
     if "additional_data" in dict_instance:
         model.additional_data = dict_instance["additional_data"]
     return model
