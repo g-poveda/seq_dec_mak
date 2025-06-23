@@ -1,62 +1,59 @@
-import numpy as np
-from typing import List, Hashable
-def sgs_algorithm(rcpsp_model: RcpspProblem, 
-                  permutation_of_task: List[Hashable], predecessors=None):
-    # Compute predecessors for each task. 
+def sgs_algorithm(rcpsp_problem: RcpspProblem,
+                  permutation_of_task: List[Hashable],
+                  predecessors: dict[Hashable, set[Hashable]]=None):
+    # Compute a predecessors mapping for each task. 
     if predecessors is None:
-        predecessors = {k: set() for k in rcpsp_model.tasks_list}
-        for k in rcpsp_model.successors:
-            succ = rcpsp_model.successors[k]
+        predecessors = {k: set() for k in rcpsp_problem.tasks_list}
+        for k in rcpsp_problem.successors:
+            succ = rcpsp_problem.successors[k]
             for s in succ:
                 predecessors[s].add(k)
-    # Store partial schedule
-    schedule = {k: {"start_time": None,
-                    "end_time": None}
-                for k in rcpsp_model.tasks_list}
-    # Duration of task
-    duration_task = {k: rcpsp_model.mode_details[k][1]["duration"] for k in rcpsp_model.mode_details}
-    # object to keep track of resource availability through time.
-    resources_availability = {r: np.array(rcpsp_model.get_resource_availability_array(r))
-                              for r in rcpsp_model.resources_list}
-    # Store all the task that are added to the schedule.
-    done = set()
-    # Store the minimum starting time of a task.
-    minimum_time = {t: 0 for t in rcpsp_model.tasks_list}
-    while True:
-        # Here, we select the next task in "permutation_of_task", whose all predecessors are done, and that is not done itself.
-        next_task = next(x for x in permutation_of_task 
-                         if all(p in done for p in predecessors[x]) 
-                         and x not in done)
-        # We distinguish task with 0 duration (for whcih we don't look at resource availability..)
+
+    # Pre-compute durations for each task (assuming mode 1)
+    duration_task = {k: rcpsp_problem.mode_details[k][1]["duration"] for k in rcpsp_problem.tasks_list}
+    # Pre-compute resource needs for each task
+    resource_consumptions = {k: {r: rcpsp_problem.mode_details[k][1].get(r, 0) for r in rcpsp_problem.resources_list}
+                             for k in rcpsp_problem.tasks_list}
+    # Initialize the schedule dictionary to store start and end times
+    schedule = {t: {"start_time": None, "end_time": None} for t in rcpsp_problem.tasks_list}
+    # Resource availability is tracked over the project horizon.
+    # It's a dictionary of arrays, one for each resource.
+    resources_availability = {r: rcpsp_problem.get_resource_availability_array(r)
+                              for r in rcpsp_problem.resources_list}
+    
+    # Set of tasks that are already scheduled and finished.
+    completed_tasks = set()
+
+    # The source task is the first to be scheduled, at time 0.
+    source_task = rcpsp_problem.source_task
+    schedule[source_task]["start_time"] = 0
+    schedule[source_task]["end_time"] = 0
+    completed_tasks.add(source_task)
+
+    # Main loop: continue until all tasks are scheduled
+    while len(completed_tasks) < rcpsp_problem.n_jobs:
+        # 1. Find the next eligible task from the permutation
+        next_task = next(p for p in permutation_of_task 
+                         if p not in completed_tasks and all(pred in completed_tasks for pred in predecessors.get(p, set())))        
+        # 2. Determine the earliest start time based on PRECEDENCE constraints
+        # This is the maximum of the end times of all its predecessors.
+        earliest_start_by_pred = 0
+        if len(predecessors.get(next_task, set())) > 0:
+            earliest_start_by_pred = max([schedule[pred]["end_time"] for pred in predecessors[next_task]])
+
+        # 3. Find the final start time by also considering RESOURCE constraints
+        # Starting from earliest_start_by_pred, find the first time slot 't'
+        # where all required resources are available for the task's full duration.
         if duration_task[next_task] == 0:
-            time_to_schedule_task = minimum_time[next_task]
+            start_of_task = earliest_start_by_pred
         else:
-            # Look for the smallest timestamp where the resource availability is >= than the resource demand of the task, 
-            # and for the entire execution time of the task (hence the resources_availability[r][t:t+duration_task[next_task]])
-            time_to_schedule_task = next(t for t in range(minimum_time[next_task], rcpsp_model.horizon)
-                                         if 
-                                         all(min(resources_availability[r][t:t+duration_task[next_task]])>=
-                                             rcpsp_model.mode_details[next_task][1][r]
-                                             for r in resources_availability))
-        # We found the right time to schedule the task ! 
-        schedule[next_task]["start_time"] = time_to_schedule_task
-        schedule[next_task]["end_time"] = time_to_schedule_task+duration_task[next_task]
-        # Update the resource availability with the task we just schedule.
-        for r in resources_availability:
-            need = rcpsp_model.mode_details[next_task][1][r]
-            if r in rcpsp_model.non_renewable_resources:
-                resources_availability[r][schedule[next_task]["start_time"]:]-=need
-            else:
-                resources_availability[r][schedule[next_task]["start_time"]:schedule[next_task]["end_time"]]-=need
-        # Update the minimum time to start the successors of the task we just scheduled.
-        for s in rcpsp_model.successors[next_task]:
-            minimum_time[s] = max(minimum_time[s], schedule[next_task]["end_time"])
-        # Adding current task to done, so we don't pick it later ! 
-        done.add(next_task) 
-        # If all tasks are done, we finish.
-        if all(x in done for x in schedule):
-            break
-    return schedule  
+            start_of_task = next(i for i in range(earliest_start_by_pred, 2*rcpsp_problem.horizon)
+                                 if all(np.min(resources_availability[r][i:i+duration_task[next_task]])>=resource_consumptions[next_task][r]
+                                        for r in rcpsp_problem.resources_list))
+        # ... Your implementation here ...
+        # 4. Schedule the task and update resource availability
+        schedule[next_task] = {"start_time": start_of_task, "end_time": start_of_task + duration_task[next_task]}
+        # 5. Add the task to the set of completed tasks
+        completed_tasks.add(next_task)
 
-
-
+    return schedule
