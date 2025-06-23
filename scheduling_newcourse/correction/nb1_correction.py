@@ -18,7 +18,7 @@ def sgs_algorithm(rcpsp_problem: RcpspProblem,
     schedule = {t: {"start_time": None, "end_time": None} for t in rcpsp_problem.tasks_list}
     # Resource availability is tracked over the project horizon.
     # It's a dictionary of arrays, one for each resource.
-    resources_availability = {r: rcpsp_problem.get_resource_availability_array(r)
+    resources_availability = {r: np.array(rcpsp_problem.get_resource_availability_array(r))
                               for r in rcpsp_problem.resources_list}
     
     # Set of tasks that are already scheduled and finished.
@@ -53,6 +53,9 @@ def sgs_algorithm(rcpsp_problem: RcpspProblem,
         # ... Your implementation here ...
         # 4. Schedule the task and update resource availability
         schedule[next_task] = {"start_time": start_of_task, "end_time": start_of_task + duration_task[next_task]}
+        if duration_task[next_task] > 0:
+            for r in rcpsp_problem.resources_list:
+                resources_availability[r][start_of_task:start_of_task + duration_task[next_task]] -= resource_consumptions[next_task][r]
         # 5. Add the task to the set of completed tasks
         completed_tasks.add(next_task)
 
